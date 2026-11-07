@@ -9,7 +9,7 @@ TEST_FLAGS := $(SWIFT_FLAGS) \
 	-Xlinker -rpath -Xlinker $(CLT_FRAMEWORKS) \
 	-Xlinker -rpath -Xlinker $(CLT_LIBS)
 
-.PHONY: test lint format check app install clean preview
+.PHONY: test lint format check app install package clean preview
 
 test:
 	swift test $(TEST_FLAGS) 2>&1 | grep -v "build-system native' has been deprecated"; exit $${PIPESTATUS[0]}
@@ -27,6 +27,9 @@ app:
 
 install: app
 	scripts/install.sh
+
+package:
+	scripts/package.sh
 
 clean:
 	rm -rf .build build

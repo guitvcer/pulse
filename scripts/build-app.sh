@@ -1,16 +1,20 @@
 #!/bin/bash
-# Builds a release Pulse.app into build/.
+# Builds a universal (Apple Silicon + Intel) release Pulse.app into build/.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-swift build -c release --build-system native 2>&1 | grep -v "has been deprecated" || true
-BIN="$(swift build -c release --build-system native --show-bin-path 2>/dev/null)/Pulse"
-[[ -x "$BIN" ]] || { echo "Build failed" >&2; exit 1; }
+ARCHS=(arm64 x86_64)
+for arch in "${ARCHS[@]}"; do
+    swift build -c release --build-system native --triple "$arch-apple-macosx14.0" 2>&1 \
+        | grep -v "has been deprecated" || true
+    [[ -x ".build/$arch-apple-macosx/release/Pulse" ]] || { echo "Build failed for $arch" >&2; exit 1; }
+done
 
 APP=build/Pulse.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN" "$APP/Contents/MacOS/Pulse"
+lipo -create -output "$APP/Contents/MacOS/Pulse" \
+    .build/arm64-apple-macosx/release/Pulse .build/x86_64-apple-macosx/release/Pulse
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
